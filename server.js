@@ -3,7 +3,7 @@ const { addExtra } = require('puppeteer-extra');
 const puppeteer = addExtra(puppeteerVanilla);
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const jsdom = require("jsdom");
-const {sleep} = require('./utils');
+const {sleep, logMessage} = require('./utils');
 require('dotenv').config();
 let Twitter = require('twitter');
 
@@ -37,7 +37,7 @@ let getPOWsource = async function () {
         });
     }
     catch (e) {
-        console.log("Error staring browser: " + e);
+        logMessage("Error staring browser: " + e);
     }
     try {
         await page.goto(baseURL, {waitUntil: "networkidle2"});
@@ -46,7 +46,7 @@ let getPOWsource = async function () {
         return {page: page, browser: browser};
     }
     catch (e) {
-        console.log("Error navigating to page: " + e);
+        logMessage("Error navigating to page: " + e);
         return {page: page, browser: browser};
     }
 
@@ -68,7 +68,7 @@ let getLatestNews = async function (page, browser) {
         }
     }
     catch (e) {
-        console.log("Error getting curret date: " + e);
+        logMessage("Error getting curret date: " + e);
     }
 
     try {
@@ -96,7 +96,7 @@ let getLatestNews = async function (page, browser) {
     }
     
     catch (e) {
-        console.log("Error getting news: " + e);
+        logMessage("Error getting news: " + e);
     }
 }
 
@@ -121,7 +121,7 @@ const postTweet = async function (newsObject) {
         tweet = prefix + addedNews.join("\n") + suffix;
     }
     catch (e) {
-        console.log("Error while creating tweet: " + e);
+        logMessage("Error while creating tweet: " + e);
     }
 
     try {
@@ -132,7 +132,7 @@ const postTweet = async function (newsObject) {
         await twitterClient.post('statuses/update', status);
     }
     catch (e) {
-        console.log("Error while posting tweet: " + e);
+        logMessage("Error while posting tweet: " + e);
     }
 }
 
@@ -144,25 +144,25 @@ let init = async function () {
 }
 
 let main = async function () {
-    console.log("Starting bot");
+    logMessage("Starting bot");
     
     try {
         await init();
     }
     catch (err) {
-        console.log("Bot startup failed with error: " + err);
+        logMessage("Bot startup failed with error: " + err);
         process.exit(1);
     }
     
-    console.log("Initialized");
-    console.log("Latest date: " + latestDate);
-    console.log("Starting loop");
+    logMessage("Initialized");
+    logMessage("Latest date: " + latestDate);
+    logMessage("Starting loop");
 
     // latestDate = -1;
 
     while (true) {
         await sleep(1000 * 60 * 3);
-        console.log("Checking for new news");
+        logMessage("Checking for new news");
         let session;
         let newsObject;
 
@@ -171,19 +171,19 @@ let main = async function () {
             newsObject = await getLatestNews(session.page, session.browser);    
         }
         catch (e) {
-            console.log("Error: " + e);
+            logMessage("Error: " + e);
             continue;
         }
 
         if (newsObject.date !== latestDate) {
-            console.log("New news found -> " + newsObject.date);
-            console.log("Posting tweet...");
+            logMessage("New news found -> " + newsObject.date);
+            logMessage("Posting tweet...");
             await postTweet(newsObject);
-            console.log("Tweet posted");
+            logMessage("Tweet posted");
             latestDate = newsObject.date;
         }
         else {
-            console.log("No new news found");
+            logMessage("No new news found");
         }
     }
 }

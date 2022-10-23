@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "date-fns": "^2.29.3",
     "dotenv": "^16.0.3",
     "jsdom": "^20.0.1",
     "puppeteer": "^19.1.0",

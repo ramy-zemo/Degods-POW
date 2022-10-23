@@ -22,7 +22,7 @@ let twitterClient = new Twitter({
 
 let getPOWsource = async function () {
     let browser = await puppeteer.launch({
-        ignoreHTTPSErrors: true, headless: true, args: ["--window-size=1920,1080", ]
+        ignoreHTTPSErrors: true, headless: true, args: ['--window-size=1920,1080', '--no-sandbox']
     });
     
     const page = (await browser.pages())[0];

@@ -36,6 +36,7 @@ let getPOWsource = async function () {
     });
 
     await page.goto(baseURL, {waitUntil: "networkidle2"});
+    await sleep(1500);
 
     return {page: page, browser: browser};
 }
@@ -122,7 +123,7 @@ let main = async function () {
     // latestDate = -1;
 
     while (true) {
-        await sleep(5000);
+        await sleep(60000);
         console.log("Checking for new news");
 
         let session = await getPOWsource();

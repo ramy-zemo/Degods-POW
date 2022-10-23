@@ -21,87 +21,119 @@ let twitterClient = new Twitter({
 
 
 let getPOWsource = async function () {
-    let browser = await puppeteer.launch({
-        ignoreHTTPSErrors: true, headless: true, args: ['--window-size=1920,1080', '--no-sandbox']
-    });
+    let browser, page;
+    try {
+        browser = await puppeteer.launch({
+            ignoreHTTPSErrors: true, headless: true, args: ['--window-size=1920,1080', '--no-sandbox']
+        });
+        
+        page = (await browser.pages())[0];
+        
+        const headlessUserAgent = await page.evaluate(() => navigator.userAgent);
+        const chromeUserAgent = headlessUserAgent.replace('HeadlessChrome', 'Chrome');
+        await page.setUserAgent(chromeUserAgent);
+        await page.setExtraHTTPHeaders({
+            'accept-language': 'en-US,en;q=0.8'
+        });
+    }
+    catch (e) {
+        console.log("Error staring browser: " + e);
+    }
+    try {
+        await page.goto(baseURL, {waitUntil: "networkidle2"});
+        await sleep(1500);
     
-    const page = (await browser.pages())[0];
-    
-    
-    const headlessUserAgent = await page.evaluate(() => navigator.userAgent);
-    const chromeUserAgent = headlessUserAgent.replace('HeadlessChrome', 'Chrome');
-    await page.setUserAgent(chromeUserAgent);
-    await page.setExtraHTTPHeaders({
-        'accept-language': 'en-US,en;q=0.8'
-    });
+        return {page: page, browser: browser};
+    }
+    catch (e) {
+        console.log("Error navigating to page: " + e);
+        return {page: page, browser: browser};
+    }
 
-    await page.goto(baseURL, {waitUntil: "networkidle2"});
-    await sleep(1500);
-
-    return {page: page, browser: browser};
 }
 
 let getLatestNews = async function (page, browser) {
-    let source = await page.content();
-    const dom = new jsdom.JSDOM(source);
-    let headings = dom.window.document.querySelectorAll("h1");
-    
-    let currentDate;
-    
-    for (head of headings) {
-        if (head.textContent.endsWith("2022")) {
-            currentDate = head.textContent.toString();
-            break;
+    let dom, currentDate;
+
+    try {
+        let source = await page.content();
+        dom = new jsdom.JSDOM(source);
+        let headings = dom.window.document.querySelectorAll("h1");
+                
+        for (head of headings) {
+            if (head.textContent.endsWith("2022")) {
+                currentDate = head.textContent.toString();
+                break;
+            }
         }
     }
+    catch (e) {
+        console.log("Error getting curret date: " + e);
+    }
 
-    let allParagraphs = dom.window.document.querySelectorAll("p");
+    try {
+        let allParagraphs = dom.window.document.querySelectorAll("p");
 
-    // Iterate over all paragraphs and find the one that contains •
-    let news;
-    for (let i = 0; i < allParagraphs.length; i++) {
-        if (allParagraphs[i].textContent.includes("•")) {
-            news = allParagraphs[i].textContent;
+        // Iterate over all paragraphs and find the one that contains •
+        let news;
+        for (let i = 0; i < allParagraphs.length; i++) {
+            if (allParagraphs[i].textContent.includes("•")) {
+                news = allParagraphs[i].textContent;
+            }
         }
+    
+        news = news.split("\n")
+        news = news.map(news => news.replace("\n", ""))
+    
+        let newsObject = {
+            date: currentDate,
+            allNews: news
+        }
+    
+        await browser.close();
+    
+        return newsObject;
     }
-
-    news = news.split("\n")
-    news = news.map(news => news.replace("\n", ""))
-
-    let newsObject = {
-        date: currentDate,
-        allNews: news
+    
+    catch (e) {
+        console.log("Error getting news: " + e);
     }
-
-    await browser.close();
-
-    return newsObject;
-
 }
 
 const postTweet = async function (newsObject) {
-    const MAX_LENGTH = 280;
+    let tweet;
+    try {
+        const MAX_LENGTH = 280;
 
-    let prefix = "New POW news for " + newsObject.date + ":" + "\n\n";
-    let suffix = "\n...\n\n" + "Full News: " + baseURL;
-    let addedNewsLen = 0;
-    let addedNews = [];
+        let prefix = "New POW news for " + newsObject.date + ":" + "\n\n";
+        let suffix = "\n...\n\n" + "Full News: " + baseURL;
+        let addedNewsLen = 0;
+        let addedNews = [];
 
-    for (let i = 0; i < newsObject.allNews.length; i++) {
-        let news = newsObject.allNews[i];
-        if (prefix.length + suffix.length + addedNewsLen + news.length + 1 < MAX_LENGTH) {
-            addedNewsLen += news.length + 1;
-            addedNews.push(news);
-        }   
+        for (let i = 0; i < newsObject.allNews.length; i++) {
+            let news = newsObject.allNews[i];
+            if (prefix.length + suffix.length + addedNewsLen + news.length + 1 < MAX_LENGTH) {
+                addedNewsLen += news.length + 1;
+                addedNews.push(news);
+            }   
+        }
+
+        tweet = prefix + addedNews.join("\n") + suffix;
+    }
+    catch (e) {
+        console.log("Error while creating tweet: " + e);
     }
 
-    let tweet = prefix + addedNews.join("\n") + suffix;
-
-    let status = {
-        status: tweet,
+    try {
+        let status = {
+            status: tweet,
+        }
+        
+        await twitterClient.post('statuses/update', status);
     }
-    
-    await twitterClient.post('statuses/update', status);
+    catch (e) {
+        console.log("Error while posting tweet: " + e);
+    }
 }
 
 
@@ -114,7 +146,13 @@ let init = async function () {
 let main = async function () {
     console.log("Starting bot");
     
-    await init();
+    try {
+        await init();
+    }
+    catch (err) {
+        console.log("Bot startup failed with error: " + err);
+        process.exit(1);
+    }
     
     console.log("Initialized");
     console.log("Latest date: " + latestDate);
@@ -123,12 +161,20 @@ let main = async function () {
     // latestDate = -1;
 
     while (true) {
-        await sleep(60000);
+        await sleep(1000 * 60 * 3);
         console.log("Checking for new news");
+        let session;
+        let newsObject;
 
-        let session = await getPOWsource();
-        let newsObject = await getLatestNews(session.page, session.browser);
-        
+        try {
+            session = await getPOWsource();
+            newsObject = await getLatestNews(session.page, session.browser);    
+        }
+        catch (e) {
+            console.log("Error: " + e);
+            continue;
+        }
+
         if (newsObject.date !== latestDate) {
             console.log("New news found -> " + newsObject.date);
             console.log("Posting tweet...");

@@ -38,6 +38,7 @@ let getPOWsource = async function () {
     }
     catch (e) {
         logMessage("Error staring browser: " + e);
+        return {page: page, browser: browser};
     }
     try {
         await page.goto(baseURL, {waitUntil: "networkidle2"});
@@ -69,6 +70,7 @@ let getLatestNews = async function (page, browser) {
     }
     catch (e) {
         logMessage("Error getting curret date: " + e);
+        return {date: currentDate, allNews: []};
     }
 
     try {
@@ -97,6 +99,7 @@ let getLatestNews = async function (page, browser) {
     
     catch (e) {
         logMessage("Error getting news: " + e);
+        return {date: currentDate, allNews: []};
     }
 }
 
@@ -122,6 +125,7 @@ const postTweet = async function (newsObject) {
     }
     catch (e) {
         logMessage("Error while creating tweet: " + e);
+        return;
     }
 
     try {
@@ -133,6 +137,7 @@ const postTweet = async function (newsObject) {
     }
     catch (e) {
         logMessage("Error while posting tweet: " + e);
+        return;
     }
 }
 

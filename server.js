@@ -3,7 +3,7 @@ const { addExtra } = require('puppeteer-extra');
 const puppeteer = addExtra(puppeteerVanilla);
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const jsdom = require("jsdom");
-const {sleep, logMessage} = require('./utils');
+const {sleep, console.log} = require('./utils');
 require('dotenv').config();
 let Twitter = require('twitter');
 
@@ -37,7 +37,7 @@ let getPOWsource = async function () {
         });
     }
     catch (e) {
-        logMessage("Error staring browser: " + e);
+        console.log("Error staring browser: " + e);
         return {page: page, browser: browser};
     }
     try {
@@ -47,7 +47,7 @@ let getPOWsource = async function () {
         return {page: page, browser: browser};
     }
     catch (e) {
-        logMessage("Error navigating to page: " + e);
+        console.log("Error navigating to page: " + e);
         return {page: page, browser: browser};
     }
 
@@ -69,7 +69,7 @@ let getLatestNews = async function (page, browser) {
         }
     }
     catch (e) {
-        logMessage("Error getting curret date: " + e);
+        console.log("Error getting curret date: " + e);
         return {date: currentDate, allNews: []};
     }
 
@@ -98,7 +98,7 @@ let getLatestNews = async function (page, browser) {
     }
     
     catch (e) {
-        logMessage("Error getting news: " + e);
+        console.log("Error getting news: " + e);
         return {date: currentDate, allNews: []};
     }
 }
@@ -124,7 +124,7 @@ const postTweet = async function (newsObject) {
         tweet = prefix + addedNews.join("\n") + suffix;
     }
     catch (e) {
-        logMessage("Error while creating tweet: " + e);
+        console.log("Error while creating tweet: " + e);
         return;
     }
 
@@ -136,7 +136,7 @@ const postTweet = async function (newsObject) {
         await twitterClient.post('statuses/update', status);
     }
     catch (e) {
-        logMessage("Error while posting tweet: " + e);
+        console.log("Error while posting tweet: " + e);
         return;
     }
 }
@@ -149,25 +149,25 @@ let init = async function () {
 }
 
 let main = async function () {
-    logMessage("Starting bot");
+    console.log("Starting bot");
     
     try {
         await init();
     }
     catch (err) {
-        logMessage("Bot startup failed with error: " + err);
+        console.log("Bot startup failed with error: " + err);
         process.exit(1);
     }
     
-    logMessage("Initialized");
-    logMessage("Latest date: " + latestDate);
-    logMessage("Starting loop");
+    console.log("Initialized");
+    console.log("Latest date: " + latestDate);
+    console.log("Starting loop");
 
     // latestDate = -1;
 
     while (true) {
         await sleep(1000 * 60 * 3);
-        logMessage("Checking for new news");
+        console.log("Checking for new news");
         let session;
         let newsObject;
 
@@ -176,19 +176,19 @@ let main = async function () {
             newsObject = await getLatestNews(session.page, session.browser);    
         }
         catch (e) {
-            logMessage("Error: " + e);
+            console.log("Error: " + e);
             continue;
         }
 
         if (newsObject.date !== latestDate) {
-            logMessage("New news found -> " + newsObject.date);
-            logMessage("Posting tweet...");
+            console.log("New news found -> " + newsObject.date);
+            console.log("Posting tweet...");
             await postTweet(newsObject);
-            logMessage("Tweet posted");
+            console.log("Tweet posted");
             latestDate = newsObject.date;
         }
         else {
-            logMessage("No new news found");
+            console.log("No new news found");
         }
     }
 }

@@ -3,7 +3,7 @@ const { addExtra } = require('puppeteer-extra');
 const puppeteer = addExtra(puppeteerVanilla);
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const jsdom = require("jsdom");
-const {sleep, console.log} = require('./utils');
+const {sleep} = require('./utils');
 require('dotenv').config();
 let Twitter = require('twitter');
 

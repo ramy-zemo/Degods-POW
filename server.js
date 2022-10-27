@@ -119,12 +119,14 @@ let main = async function () {
     console.log("Initialized");
     console.log("Latest date: " + latestDate);
     console.log("Starting loop");
+    console.log("Current time:", new Date().toLocaleString());
 
     // latestDate = -1;
 
     while (true) {
         await sleep(1000 * 60 * 3);
         console.log("Checking for new news");
+        console.log("Current time:", new Date().toLocaleString());
         let session;
         let newsObject;
 

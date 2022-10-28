@@ -35,8 +35,14 @@ let getPOWsource = async function () {
         "accept-language": "en-US,en;q=0.8",
     });
 
-    await page.goto(baseURL, { waitUntil: "networkidle2" });
-    await sleep(1500);
+    try {
+        await page.goto(baseURL, { waitUntil: "networkidle2" });
+        await sleep(1500);
+    }
+    catch (e) {
+        console.log(e);
+        return await getPOWsource();
+    }
 
     return { page: page, browser: browser };
 };
